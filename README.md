@@ -1,120 +1,105 @@
 # Curvature-Aware Pulling on Riemannian Manifolds (CAPM)
 
-A simple educational project comparing Euclidean pull updates and curvature-aware geodesic pull updates on a sphere manifold.
+This project compares two ways of moving a point toward an equator-like target
+surface on curved manifolds:
 
-## 1. Project Overview
+- **Euclidean pull** - a baseline update that moves in ambient 3D space and then
+  projects the point back to the manifold.
+- **CAPM pull** - a curvature-aware update that projects the update direction
+  into the tangent space before moving on the manifold.
 
-This repository demonstrates how motion on a curved manifold differs from naive Euclidean motion in ambient space. It compares two update strategies for moving points toward a target surface on the unit sphere:
+The experiment is run on two manifolds:
 
-- **Euclidean pull**: a baseline update using straight-line gradient descent in R³.
-- **CAPM pull**: a curvature-aware update using tangent projection and the exponential map.
+- a unit sphere
+- an ellipsoid with axes `a = 1.5`, `b = 1.0`, `c = 0.7`
 
-The goal is to show why manifold geometry matters and how geodesic motion improves behavior.
+The target surface for both manifolds is the equator, defined by `z = 0`.
 
-## 2. Motivation
+## Project Goal
 
-Many optimization and learning problems involve data that live on curved spaces rather than flat Euclidean space. In those cases, updates that ignore curvature can behave poorly, drift off the manifold, or converge slowly.
+The goal is to show why geometry matters when data lives on a curved space.
+Euclidean updates are simple, but they ignore the local geometry of the
+manifold. CAPM uses tangent projection and manifold-aware movement, so its
+trajectory better respects the curved surface.
 
-This project uses the unit sphere as a concrete example to highlight:
+## Project Structure
 
-- the difference between flat-space and manifold-aware updates
-- why normalization is not enough by itself
-- how tangent directions and geodesics preserve the manifold structure
+```text
+capm-project/
+├── config.py                    # Shared experiment constants and paths
+├── experiment.py                # Runs all configured experiment cases
+├── main.py                      # Main entry point
+├── visualization.py             # Generates polished result plots
+├── sphere_manifold.py           # Sphere geometry utilities
+├── sphere_surface.py            # Sphere equator target and sampling utilities
+├── sphere_euclidean_pull.py     # Euclidean pull on the sphere
+├── sphere_capm_pull.py          # CAPM pull on the sphere
+├── ellipsoid_manifold.py        # Ellipsoid geometry utilities
+├── ellipsoid_surface.py         # Ellipsoid equator target and sampling utilities
+├── ellipsoid_euclidean_pull.py  # Euclidean pull on the ellipsoid
+├── ellipsoid_capm_pull.py       # CAPM pull on the ellipsoid
+└── results/                     # Generated PNG visualizations
+```
 
-## 3. Mathematical Intuition
+## How It Works
 
-The sphere is a simple Riemannian manifold embedded in R³. On this manifold:
+For each configured starting point, the project runs both update methods on
+both manifolds.
 
-- points are unit vectors
-- tangent directions lie in the plane orthogonal to the point
-- the shortest path between two points is a great circle
+The update methods are compared using:
 
-A geometry-aware update respects these properties, while a Euclidean update does not.
+- final signed distance to the equator
+- distance reduction after repeated updates
+- trajectory plots on the manifold surface
+- convergence plots across iterations
 
-## 4. Sphere Manifold Geometry
+The default run allows up to `100` pull steps. CAPM stops early when the
+absolute signed distance to the equator is at most `1e-3`; the final converged
+point is then projected onto the exact equator so the final CAPM marker lies on
+`z = 0`.
 
-Key concepts used in this project:
+## Visualizations
 
-- **Unit sphere**: the set of all points in R³ with norm 1.
-- **Tangent space**: at a point `x`, the tangent space is the plane orthogonal to `x`.
-- **Projection onto tangent space**: removes any component along `x` so the update stays valid.
-- **Normalization**: ensures output points remain on the sphere after an ambient-space update.
+Running `main.py` generates five PNG files in `results/`:
 
-## 5. Euclidean vs CAPM
+```text
+results/sphere_start_A_euclidean_vs_capm.png
+results/ellipsoid_start_A_euclidean_vs_capm.png
+results/sphere_start_B_euclidean_vs_capm.png
+results/ellipsoid_start_B_euclidean_vs_capm.png
+results/distance_convergence_summary.png
+```
 
-### Euclidean pull
+The trajectory plots show:
 
-- Uses the signed-distance gradient in R³.
-- Applies a simple update `x_new = x - step_size * grad`.
-- Renormalizes afterward to stay on the sphere.
-- Ignores manifold curvature, so the path is not geodesic.
+- the manifold surface
+- the target equator as a black curve
+- the normalized starting point
+- the Euclidean pull trajectory
+- the CAPM pull trajectory
+- the final point reached by each method
 
-### CAPM pull
+The ellipsoid plots use the ellipsoid's real axis proportions, so the shape is
+visibly stretched in the `x` direction and compressed in the `z` direction.
 
-- Computes a tangent direction from the signed-distance gradient.
-- Normalizes gradient magnitude and scales by the signed distance.
-- Projects the update onto the tangent space.
-- Uses the exponential map to move along the sphere.
-- Preserves geometric correctness and tends to converge more smoothly.
+## Installation
 
-## 6. Signed Distance Function
-
-The target surface is defined as the sphere equator, where `z = 0`.
-
-- The signed distance is approximated by the `z` value.
-- Positive values are above the equator, negative values are below.
-- This function is simple and intuitive for the sphere.
-
-## 7. Exponential Map
-
-The exponential map is the correct way to move from a point along a tangent direction on the sphere.
-
-- It follows a great circle.
-- It stays on the manifold without requiring repeated projection.
-- It is the manifold-equivalent of a straight-line step in Euclidean space.
-
-## 8. Visualization Results
-
-The project includes visualizations that compare:
-
-- trajectories on the sphere for Euclidean and CAPM pull
-- convergence of absolute signed distance to the equator over iterations
-
-The visualizations show how CAPM yields a smoother, geometry-respecting path while Euclidean pull can move inefficiently.
-
-## 9. Project Structure
-
-- `manifold.py` — sphere geometry utilities, tangent projection, exponential map, and geodesic distance.
-- `surface.py` — defines the equator target surface, signed-distance function, and point generators.
-- `euclidean_pull.py` — baseline Euclidean pull update and trajectory tracking.
-- `capm_pull.py` — curvature-aware CAPM pull update and trajectory tracking.
-- `visualization.py` — plots sphere trajectories and convergence comparisons.
-- `main.py` — single entry point to run the full experiment.
-
-## 10. Installation
-
-1. Create or activate a Python environment.
-2. Install required packages:
+Create or activate a Python environment, then install:
 
 ```bash
 pip install numpy matplotlib
 ```
 
-## 11. How to Run
-
-Run the full experiment with:
+## Run
 
 ```bash
 python main.py
 ```
 
-This will execute both update methods, print a summary, and generate visualization files.
+The console prints the numerical comparison, and all generated figures are
+saved inside `results/`.
 
-## 12. Future Improvements
+## Main Idea in One Line
 
-Possible extensions include:
-
-- adding more general manifold targets beyond the sphere
-- comparing with other manifold optimization methods
-- improving the signed-distance model for more complex surfaces
-- adding interactive visualization and animation
+Euclidean pull moves as if the space were flat; CAPM pull moves using local
+manifold geometry, so the trajectory is more faithful to the curved surface.

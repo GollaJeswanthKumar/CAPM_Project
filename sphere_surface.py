@@ -34,6 +34,18 @@ def signed_distance_to_equator(x):
     return x[2]
 
 
+def project_to_equator(x):
+    """Project a near-equator sphere point exactly onto the equator."""
+    x = np.asarray(x, dtype=float)
+    if x.shape != (3,):
+        raise ValueError("Input x must be a 3-dimensional vector.")
+
+    planar_norm = np.linalg.norm(x[:2])
+    if planar_norm == 0.0:
+        raise ValueError("Cannot project a pole point onto a unique equator point.")
+    return np.array([x[0] / planar_norm, x[1] / planar_norm, 0.0])
+
+
 def gradient_signed_distance(x):
     """Return the gradient direction of the signed distance function.
 

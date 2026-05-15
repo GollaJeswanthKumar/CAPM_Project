@@ -22,8 +22,8 @@ Potential errors on curved spaces:
 """
 
 import numpy as np
-from manifold import normalize_point
-from surface import signed_distance_to_equator, gradient_signed_distance
+from sphere_manifold import normalize_point
+from sphere_surface import signed_distance_to_equator, gradient_signed_distance
 
 
 def euclidean_pull_step(x, step_size):
@@ -80,7 +80,7 @@ def run_euclidean_pull(x0, num_steps, step_size):
 
 if __name__ == "__main__":
     # Test the Euclidean pull on a random near-equator point.
-    from surface import generate_near_equator_points
+    from sphere_surface import generate_near_equator_points
 
     # Generate a single random point near the equator.
     initial_points = generate_near_equator_points(1, noise_level=0.2)

@@ -1,49 +1,43 @@
-"""Main entry point for the CAPM sphere manifold experiment.
+"""Main entry point for the CAPM sphere and ellipsoid experiment."""
 
-This script runs the full comparison between naive Euclidean pull and
-curvature-aware CAPM pull on the unit sphere, then visualizes the results.
-"""
+from config import PROJECT_DIR, RESULTS_DIR
+from experiment import iter_experiment_cases, run_experiment_suite
+from visualization import run_visualizations
 
-from surface import generate_near_equator_points, signed_distance_to_equator
-from euclidean_pull import run_euclidean_pull
-from capm_pull import run_capm_pull
-from visualization import plot_sphere_and_trajectories, plot_convergence
+
+def _print_case_summary(case_result):
+    manifold = case_result["manifold"].title()
+    start_label = case_result["start_label"]
+    initial_distance = case_result["initial_distance"]
+    euclidean_final = case_result["euclidean"]["distances"][-1]
+    capm_final = case_result["capm"]["distances"][-1]
+    capm_steps = len(case_result["capm"]["distances"]) - 1
+
+    print(f"[{manifold} | Start {start_label}]")
+    print(f"  Normalized start: {case_result['start']}")
+    print(f"  Initial signed distance: {initial_distance:.6f}")
+    print(f"  Euclidean final distance: {euclidean_final:.6f}")
+    print(f"  CAPM final distance:      {capm_final:.6f}")
+    print(f"  CAPM steps used:          {capm_steps}")
+    print(f"  Euclidean reduction:      {abs(initial_distance - euclidean_final):.6f}")
+    print(f"  CAPM reduction:           {abs(initial_distance - capm_final):.6f}")
+    print()
 
 
 def main():
-    print("\n=== CAPM Sphere Manifold Experiment ===\n")
+    print("\n=== Curvature-Aware Pulling on Manifolds (CAPM) ===\n")
 
-    print("[1] Generating initial near-equator point")
-    x0 = generate_near_equator_points(1, noise_level=0.2)[0]
-    initial_distance = signed_distance_to_equator(x0)
-    print(f"Initial point: {x0}")
-    print(f"Initial signed distance to equator: {initial_distance:.6f}\n")
+    print("[1] Running Euclidean and CAPM pull experiments")
+    results = run_experiment_suite()
+    for case_result in iter_experiment_cases(results):
+        _print_case_summary(case_result)
 
-    print("[2] Running Euclidean pull baseline")
-    num_steps = 20
-    step_size = 0.1
-    euclidean_result = run_euclidean_pull(x0, num_steps, step_size)
-    euclidean_final = euclidean_result['distances'][-1]
-    print(f"Final Euclidean signed distance: {euclidean_final:.6f}\n")
+    print("[2] Generating visualization files")
+    generated_files = run_visualizations(results, RESULTS_DIR)
 
-    print("[3] Running CAPM geodesic pull")
-    capm_result = run_capm_pull(x0, num_steps, step_size)
-    capm_final = capm_result['distances'][-1]
-    print(f"Final CAPM signed distance: {capm_final:.6f}\n")
-
-    print("[4] Comparing convergence behavior")
-    print(f"Euclidean distance change: {abs(initial_distance - euclidean_final):.6f}")
-    print(f"CAPM distance change:      {abs(initial_distance - capm_final):.6f}\n")
-
-    print("[5] Launching visualization")
-    plot_sphere_and_trajectories(euclidean_result, capm_result, x0)
-    plot_convergence(euclidean_result, capm_result)
-
-    print("\nExperiment complete. Two plot files have been generated:")
-    print("- sphere_trajectories.png")
-    print("- convergence_comparison.png")
-    print("\nThe 3D plot shows how each method moves on the sphere, and the convergence plot")
-    print("shows how the absolute distance to the equator evolves over iterations.")
+    print(f"\nExperiment complete. Generated {len(generated_files)} files in {RESULTS_DIR.name}/:")
+    for output_path in generated_files:
+        print(f"- {output_path.relative_to(PROJECT_DIR)}")
 
 
 if __name__ == "__main__":

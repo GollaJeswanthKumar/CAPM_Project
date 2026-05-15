@@ -20,8 +20,8 @@ Why this is more geometrically correct than Euclidean pull:
 """
 
 import numpy as np
-from manifold import normalize_point, project_to_tangent, exp_map_sphere
-from surface import signed_distance_to_equator, gradient_signed_distance
+from sphere_manifold import normalize_point, project_to_tangent, exp_map_sphere
+from sphere_surface import signed_distance_to_equator, project_to_equator, gradient_signed_distance
 
 
 def capm_pull_step(x, step_size, tau=1e-6):
@@ -51,7 +51,7 @@ def capm_pull_step(x, step_size, tau=1e-6):
     return exp_map_sphere(x, v_tangent)
 
 
-def run_capm_pull(x0, num_steps, step_size):
+def run_capm_pull(x0, num_steps, step_size, convergence_tolerance=None):
     """Run CAPM pull for multiple steps and track the trajectory.
 
     This iteratively applies the CAPM pull step and records
@@ -61,6 +61,8 @@ def run_capm_pull(x0, num_steps, step_size):
         x0: array-like of shape (3,), initial point on the sphere.
         num_steps: int, number of pull steps.
         step_size: float, learning rate.
+        convergence_tolerance: optional float. If provided, stop once the
+            absolute signed distance is at or below this value.
 
     Returns:
         dict with keys:
@@ -73,8 +75,16 @@ def run_capm_pull(x0, num_steps, step_size):
 
     for _ in range(num_steps):
         x = capm_pull_step(x, step_size)
+        distance = signed_distance_to_equator(x)
+        if convergence_tolerance is not None and abs(distance) <= convergence_tolerance:
+            x = project_to_equator(x)
+            distance = signed_distance_to_equator(x)
+
         trajectory.append(x.copy())
-        distances.append(signed_distance_to_equator(x))
+        distances.append(distance)
+
+        if convergence_tolerance is not None and abs(distance) <= convergence_tolerance:
+            break
 
     return {
         'trajectory': trajectory,
@@ -84,7 +94,7 @@ def run_capm_pull(x0, num_steps, step_size):
 
 if __name__ == "__main__":
     # Test the CAPM pull on a random near-equator point.
-    from surface import generate_near_equator_points
+    from sphere_surface import generate_near_equator_points
 
     # Generate a single random point near the equator.
     initial_points = generate_near_equator_points(1, noise_level=0.2)
