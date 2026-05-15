@@ -1,6 +1,7 @@
 # Curvature-Aware Pulling on Riemannian Manifolds (CAPM)
 
 This project compares two ways of moving a point toward an equator-like target
+
 surface on curved manifolds:
 
 - **Euclidean pull** - a baseline update that moves in ambient 3D space and then
